@@ -94,7 +94,7 @@ def preprocess(metadata: DatasetMetadata, cfg: PreprocessConfig) -> PreprocessRe
 
     if cfg.encode_categorical and categorical_cols:
         low_card_cols = [c for c in categorical_cols if df[c].nunique(dropna=True) < 50]
-        encoder = OneHotEncoder(sparse=False, handle_unknown="ignore")
+        encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
         if low_card_cols:
             encoded = encoder.fit_transform(df[low_card_cols].fillna("missing"))
             encoded_cols = encoder.get_feature_names_out(low_card_cols).tolist()
@@ -103,7 +103,8 @@ def preprocess(metadata: DatasetMetadata, cfg: PreprocessConfig) -> PreprocessRe
                 pd.DataFrame(encoded, columns=encoded_cols),
             ], axis=1)
         high_card = set(categorical_cols) - set(low_card_cols)
-        processed.drop(columns=list(high_card), errors="ignore")
+        if high_card:
+            processed = processed.drop(columns=list(high_card), errors="ignore")
 
     scaler: StandardScaler | None = None
     if cfg.standardize:

@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import shutil
+from typing import Optional
+
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from afcs_core import pipeline
@@ -36,11 +38,13 @@ app.mount("/static/plots", StaticFiles(directory=settings.plots_dir), name="plot
 
 
 @app.post("/upload", response_model=UploadResponse)
-async def upload_dataset(file: UploadFile = File(...), demo: bool = False) -> UploadResponse:
+async def upload_dataset(file: Optional[UploadFile] = File(None), demo: bool = False) -> UploadResponse:
     if demo:
         dataset_path = generate_demo_csv()
         metadata = pipeline.register_dataset(dataset_path, dataset_name="afcs_demo.csv")
     else:
+        if file is None:
+            raise HTTPException(status_code=400, detail="Upload file is required")
         if file.content_type not in {"text/csv", "application/vnd.ms-excel"}:
             raise HTTPException(status_code=400, detail="Only CSV uploads are supported")
         dest = settings.uploads_dir / f"{generate_id('upload')}.csv"
@@ -134,8 +138,9 @@ async def download_artifact(result_id: str, artifact_name: str):
 
 
 @app.delete("/results/{result_id}", status_code=204)
-async def delete_result(result_id: str) -> None:
+async def delete_result(result_id: str) -> Response:
     pipeline.delete_result(result_id)
+    return Response(status_code=204)
 
 
 @app.get("/health")

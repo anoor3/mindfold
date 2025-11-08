@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const DatasetInfo = z.object({
   id: z.string(),
@@ -67,7 +67,7 @@ async function request<T>(path: string, init?: RequestInit, schema?: z.ZodType<T
   return schema.parse(data);
 }
 
-export async function uploadFile(file: File, demo = false): Promise<DatasetInfo> {
+export async function uploadFile(file: File | undefined, demo = false): Promise<DatasetInfo> {
   if (demo) {
     const response = await fetch(`${baseUrl}/upload?demo=true`, { method: "POST" });
     if (!response.ok) {
@@ -75,6 +75,9 @@ export async function uploadFile(file: File, demo = false): Promise<DatasetInfo>
     }
     const json = await response.json();
     return DatasetInfo.parse(json.dataset);
+  }
+  if (!file) {
+    throw new Error("A CSV file is required for upload");
   }
   const form = new FormData();
   form.append("file", file);

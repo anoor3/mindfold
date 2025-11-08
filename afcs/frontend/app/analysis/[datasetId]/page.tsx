@@ -2,11 +2,17 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { ChartCard } from "../../../components/ChartCard";
 import { ProgressDialog } from "../../../components/ProgressDialog";
-import { analyzeDataset, pollJob, startCompression } from "../../../lib/api";
+import {
+  analyzeDataset,
+  pollJob,
+  startCompression,
+  type AnalyzeResponse,
+  type JobStatus
+} from "../../../lib/api";
 
 const tabs = ["Overview", "Compression", "Explain"] as const;
 
@@ -18,9 +24,12 @@ export default function AnalysisPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [jobId, setJobId] = useState<string | null>(null);
-  const [progress, setProgress] = useState({ value: 0, message: "Preparing" });
+  const [progress, setProgress] = useState<{ value: number; message: string }>({
+    value: 0,
+    message: "Preparing"
+  });
 
-  const analysisQuery = useQuery({
+  const analysisQuery = useQuery<AnalyzeResponse>({
     queryKey: ["analysis", params.datasetId, search.toString()],
     queryFn: () =>
       analyzeDataset({
@@ -33,7 +42,7 @@ export default function AnalysisPage() {
 
   const compressionMutation = useMutation({
     mutationFn: (payload: Parameters<typeof startCompression>[0]) => startCompression(payload),
-    onSuccess: (data) => {
+    onSuccess: (data: Awaited<ReturnType<typeof startCompression>>) => {
       setJobId(data.job_id);
     }
   });
@@ -42,7 +51,7 @@ export default function AnalysisPage() {
     if (!jobId) return;
     let cancelled = false;
     const interval = setInterval(async () => {
-      const status = await pollJob(jobId);
+      const status: JobStatus = await pollJob(jobId);
       if (!cancelled) {
         setProgress({ value: status.progress, message: status.message ?? "Processing" });
         if (status.status === "done" && status.result_id) {
@@ -82,7 +91,14 @@ export default function AnalysisPage() {
     return () => window.removeEventListener("keydown", handler);
   }, [router]);
 
-  const stats = analysisQuery.data?.stats;
+  const stats = analysisQuery.data?.stats as
+    | {
+        shape?: [number, number];
+        missing?: Record<string, number>;
+      }
+    | undefined;
+  const missingness = (analysisQuery.data?.missingness ?? {}) as Record<string, number>;
+  const totalMissing = Object.values(missingness).reduce<number>((sum, value) => sum + value, 0);
 
   return (
     <div className="space-y-8">
@@ -125,8 +141,8 @@ export default function AnalysisPage() {
                 description="Rows, columns, and missingness overview."
               >
                 <ul className="space-y-2 text-sm">
-                  <li>Shape: {stats.shape?.[0]?.toLocaleString()} rows × {stats.shape?.[1]} columns</li>
-                  <li>Missing cells: {Object.values(stats.missing ?? {}).reduce((sum: number, value: number) => sum + value, 0)}</li>
+                  <li>Shape: {stats?.shape?.[0]?.toLocaleString()} rows × {stats?.shape?.[1]} columns</li>
+                  <li>Missing cells: {totalMissing.toLocaleString()}</li>
                 </ul>
               </ChartCard>
               <ChartCard title="Type inference" description="Count of numeric vs categorical columns.">
@@ -147,9 +163,9 @@ export default function AnalysisPage() {
               <ChartCard title="Choose method" description="Select PCA or Autoencoder and tune hyperparameters.">
                 <form
                   className="space-y-4"
-                  onSubmit={(event) => {
+                  onSubmit={(event: FormEvent<HTMLFormElement>) => {
                     event.preventDefault();
-                    const formData = new FormData(event.currentTarget as HTMLFormElement);
+                    const formData = new FormData(event.currentTarget);
                     const method = formData.get("method") as "pca" | "autoencoder";
                     const variance = Number(formData.get("pca_variance")) || 0.95;
                     const latent = Number(formData.get("ae_latent_dim")) || 4;

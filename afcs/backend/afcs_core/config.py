@@ -1,13 +1,14 @@
 """Configuration helpers for AFCS backend."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from pydantic import BaseModel
 
 
 class Settings(BaseModel):
-    data_dir: Path = Path(__file__).resolve().parents[2] / "data"
+    data_dir: Path = Path(os.environ.get("AFCS_DATA_DIR", (Path.home() / ".afcs")))
     uploads_dir: Path = data_dir / "uploads"
     artifacts_dir: Path = data_dir / "artifacts"
     plots_dir: Path = data_dir / "plots"

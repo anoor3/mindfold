@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -65,7 +66,13 @@ export default function ResultsPage() {
       <section className="grid gap-6 lg:grid-cols-3">
         {result.plots.map((plot) => (
           <div key={plot.name} className="glassy overflow-hidden">
-            <img src={`http://localhost:8000${plot.url}`} alt={plot.name} className="h-64 w-full object-cover" />
+            <Image
+              src={`http://localhost:8000${plot.url}`}
+              alt={plot.name}
+              width={800}
+              height={400}
+              className="h-64 w-full object-cover"
+            />
             <div className="p-4 text-sm capitalize opacity-80">{plot.name.replace(/_/g, " ")}</div>
           </div>
         ))}

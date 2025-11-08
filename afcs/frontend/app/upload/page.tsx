@@ -36,7 +36,8 @@ export default function UploadPage() {
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async (file: File) => uploadFile(file),
+    mutationFn: async (payload: { file?: File; demo?: boolean }) =>
+      uploadFile(payload.file ?? new File([], ""), payload.demo ?? false),
     onSuccess: async (data) => {
       setDatasetId(data.id);
       setInfo({ name: data.name, rows: data.rows, cols: data.cols });
@@ -74,7 +75,7 @@ export default function UploadPage() {
         </p>
         <div className="mt-6 space-y-6">
           <FileDropzone
-            onDrop={(file) => uploadMutation.mutate(file)}
+            onDrop={(file) => uploadMutation.mutate({ file })}
             hint={uploadMutation.isPending ? "Uploading…" : "Drop CSV or click"}
           />
           <input
@@ -84,7 +85,7 @@ export default function UploadPage() {
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) uploadMutation.mutate(file);
+              if (file) uploadMutation.mutate({ file });
             }}
           />
         </div>

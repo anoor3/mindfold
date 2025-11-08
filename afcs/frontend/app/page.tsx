@@ -1,8 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, BarChart, Brain, Download } from "lucide-react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+
+import { uploadFile } from "../lib/api";
 
 export default function HomePage() {
+  const router = useRouter();
+  const demoMutation = useMutation({
+    mutationFn: () => uploadFile(new File([], ""), true),
+    onSuccess: (dataset) => {
+      router.push(`/analysis/${dataset.id}?missing=median&encode=1&standardize=1`);
+    }
+  });
   return (
     <div className="space-y-16">
       <section className="glassy overflow-hidden p-10">
@@ -20,9 +33,14 @@ export default function HomePage() {
             <Link href="/upload" className="focus-ring inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--primary)] px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:scale-105">
               Upload CSV <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/upload?demo=true" className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-6 py-3 text-sm">
-              Try demo dataset
-            </Link>
+            <button
+              type="button"
+              onClick={() => demoMutation.mutate()}
+              className="focus-ring inline-flex items-center gap-2 rounded-full border border-[var(--border)] px-6 py-3 text-sm disabled:opacity-60"
+              disabled={demoMutation.isPending}
+            >
+              {demoMutation.isPending ? "Loading demo…" : "Try demo dataset"}
+            </button>
           </div>
         </motion.div>
       </section>
