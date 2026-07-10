@@ -2,6 +2,9 @@
 
 AFCS is a self-learning dimensionality reduction and feature ranking framework. Upload a CSV to clean, rank, compress, visualise, and export reproducible pipelines locally.
 
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Abdullah%20Noor-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/abdullah-noor1/)
+[![Email](https://img.shields.io/badge/Email-abdullahnoorllc%40gmail.com-EA4335?logo=gmail&logoColor=white)](mailto:abdullahnoorllc@gmail.com)
+
 ## Features
 - FastAPI backend with PCA and autoencoder compression
 - Feature scoring combining variance, PCA loadings, and redundancy penalties
